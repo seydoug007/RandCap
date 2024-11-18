@@ -4,3 +4,9 @@
 .httr-oauth
 .DS_Store
 .quarto
+
+# Ignore all PDF files
+*.pdf
+
+# Ignore all CSV files
+*.csv

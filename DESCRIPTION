@@ -1,12 +1,16 @@
 Package: RandCap
-Title: What the Package Does (One Line, Title Case)
+Title: RandCap: Comprehensive Randomization with Blocked, Stratified, and Variable Ratio Options
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    c(
+      person("Seydou", "GORO", , "seydoug007@gmail.com", role = c("aut", "cre"),
+             comment = c(ORCID = "0000-0002-3301-3604")),
+      person("Christina", "Sadder", , "christina.sadder@example.com", role = "ctb",
+             comment = c(ORCID = "ANOTHER-ORCID-ID")),
+      person("Biometry unit, Centre hospitalier de Créteil", "Contributor", , "another.contributor@example.com", role = "ctb")
+    )
+Description: Description: RandCap is a comprehensive R package designed to streamline the process of randomization in clinical trials and research studies. It provides functionality for blocked randomization, stratified randomization, and variable ratio allocation, making it ideal for studies that require balanced group sizes across multiple strata or customized allocation ratios. With RandCap, users can easily implement advanced randomization schemes tailored to specific trial requirements, export randomization lists for REDCap, and generate detailed reports for documentation and reproducibility. The package is especially useful for biostatisticians and researchers seeking efficient and customizable randomization solutions.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
