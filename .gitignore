@@ -10,3 +10,4 @@
 
 # Ignore all CSV files
 *.csv
+inst/doc

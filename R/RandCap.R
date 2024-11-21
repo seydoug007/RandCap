@@ -1,9 +1,3 @@
-
-library(blockrand)
-library(grid)
-library(gridExtra)
-library(tidyverse)
-
 ## RANDCAPGEN---------
 #' Generate Randomized Allocation List with Blocking and Stratification
 #'
@@ -52,54 +46,87 @@ library(tidyverse)
 #'   seed = 1234,
 #'   project_acronym = "RCT"
 #' )
-RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
+
+
+RandCapGen <- function(n, id_prefix = NULL, block_prefix = NULL, block_sizes,
                        arms, ratio = NULL, strat_vars = NULL,
-                       strat_vars_prefix = NULL, seed=NULL,
+                       strat_vars_prefix = NULL, seed = NULL,
                        uneq_beg = FALSE, uneq_mid = FALSE, uneq_min = 1,
-                       uneq_maxit = 1000,project_acronym=NULL) {
+                       uneq_maxit = 1000, project_acronym = NULL) {
   # Set the initial seed for generating seeds for each stratum
   set.seed(seed)
 
+  # Check that the number of arms is valid
+  if (length(arms) < 2) {
+    stop("Error: At least two arms are required for randomization.", call. = FALSE)
+  }
+
+  # Default ratio to 1 for each arm if not provided
+  if (is.null(ratio)) {
+    ratio <- rep(1, length(arms))
+  }
+
+  # Check for ratio consistency
+  if (length(ratio) != length(arms)) {
+    stop("Error: The length of the 'ratio' vector must match the number of arms.", call. = FALSE)
+  }
+
+  if (n %% sum(ratio) != 0) {
+    stop("Error: 'n' must be a multiple of the sum of the 'ratio' vector.", call. = FALSE)
+  }
+
+  if (any(block_sizes %% sum(ratio) != 0)) {
+    stop("Error: Each block size must be a multiple of the sum of the 'ratio' vector.", call. = FALSE)
+  }
+
   # Automatically determine the number of levels based on the length of 'arms'
-  num.levels <- length(arms)
+  num_levels <- length(arms)
 
   # Generate balanced levels if a ratio is provided
   if (!is.null(ratio)) {
     # Function to generate levels according to the specified ratio
     generate_levels_with_ratio <- function(arms, ratio) {
+      # Check if the 'arms' vector contains duplicates
+      if (any(duplicated(arms))) {
+        stop("Error: The 'arms' vector contains duplicated values. Please ensure all arms are unique.", call. = FALSE)
+      }
+      # Ensure that 'arms' and 'ratio' are of the same length
+      if (length(arms) != length(ratio)) {
+        stop("Error: The length of 'arms' and 'ratio' must be the same.", call. = FALSE)
+      }
+      # Generate levels based on the ratio
       unlist(mapply(rep, arms, ratio))
     }
-    # Use the generated levels with ratio
+    # Use the generated levels with the specified ratio
     balanced_levels <- generate_levels_with_ratio(arms, ratio)
   } else {
     # If no ratio is provided, use the original arms
     balanced_levels <- arms
   }
 
-  # Calculate block sizes by dividing each element in block_sizes by
-  #the number of balanced levels
-  block.sizes <- block_sizes / length(balanced_levels)
+  # Calculate block sizes by dividing each element in block_sizes by the number of balanced levels
+  adjusted_block_sizes <- block_sizes / length(balanced_levels)
 
-  # Define the function to shuffle the blocks
-  melanger_blocs <- function(df) {
-    # Split the dataframe into blocks based on block.id
-    blocs <- split(df, df$block.id)
+  # Define the function to shuffle blocks
+  shuffle_blocks <- function(data) {
+    # Split the data into blocks based on block.id
+    blocks <- split(data, data$block.id)
     # Shuffle the blocks
-    blocs_melanges <- sample(blocs)
-    # Recombine the shuffled blocks into a final dataframe
-    df_melange <- do.call(rbind, blocs_melanges)
-    return(df_melange)
+    shuffled_blocks <- sample(blocks)
+    # Recombine the shuffled blocks into a final data frame
+    shuffled_data <- do.call(rbind, shuffled_blocks)
+    return(shuffled_data)
   }
 
   # Check if stratification variables are provided
   if (is.null(strat_vars)) {
     # No stratification: Perform a single global block randomization
-    rand_df <- blockrand(
+    rand_df <- blockrand::blockrand(
       n = n,
       num.levels = length(balanced_levels),
       id.prefix = id_prefix,
       block.prefix = block_prefix,
-      block.sizes = block.sizes,
+      block.sizes = adjusted_block_sizes,
       levels = balanced_levels,
       uneq.beg = uneq_beg,
       uneq.mid = uneq_mid,
@@ -107,18 +134,19 @@ RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
       uneq.maxit = uneq_maxit
     )
 
-    # Rename the treatment column to "rando_bras"
-    colnames(rand_df)[colnames(rand_df) == "treatment"] <- "rando_bras"
+    # Rename the treatment column to "treatment_arm"
+    colnames(rand_df)[colnames(rand_df) == "treatment"] <- "treatment_arm"
 
-    rand_df <- melanger_blocs(rand_df)
+    # Shuffle the blocks
+    rand_df <- shuffle_blocks(rand_df)
 
     # Full dataset with only the relevant columns
-    final_df <- rand_df[, c("id", "block.id", "block.size", "rando_bras")]
+    final_df <- rand_df[, c("id", "block.id", "block.size", "treatment_arm")]
 
-    # Simplified dataset with only "rando_bras"
-    simplified_df <- final_df[, "rando_bras", drop = FALSE]
-
+    # Simplified dataset with only "treatment_arm"
+    simplified_df <- final_df[, "treatment_arm", drop = FALSE]
   } else {
+
     # Stratified randomization with combinations of stratification variables
 
     # Generate all combinations of stratification variables
@@ -127,7 +155,7 @@ RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
     # Generate a unique seed for each stratum
     stratum_seeds <- sample(1:10000, nrow(strat_combinations), replace = FALSE)
 
-    # Initialize an empty list to store randomization dataframes
+    # Initialize an empty list to store randomization data frames
     all_strata <- list()
 
     # Iterate through each combination of stratification variables
@@ -135,38 +163,33 @@ RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
       # Set the seed for this specific stratum
       set.seed(stratum_seeds[i])
 
-      # Get the current combination of stratification levels as a data.frame
+      # Get the current combination of stratification levels
       strat_comb <- strat_combinations[i, , drop = FALSE]
 
-      # Retrieve the stratification variable name(s)
-      strat_var_names <- names(strat_comb)
-
-      # Create a custom label for the stratum based on the combination of
-      # stratification variables and their labels
+      # Create a custom label for the stratum based on the combination of stratification variables
       if (ncol(strat_combinations) == 1) {
-        stratum_label <- paste0(strat_vars_prefix[[strat_var_names]], "",
-                                strat_comb[[1]])
+        stratum_label <- paste0(strat_vars_prefix[[names(strat_comb)]], strat_comb[[1]])
       } else {
         stratum_label <- paste(
           mapply(function(var_name, value) {
-            paste0(strat_vars_prefix[[var_name]], "", value)
-          }, strat_var_names, strat_comb),
+            paste0(strat_vars_prefix[[var_name]], value)
+          }, names(strat_comb), strat_comb),
           collapse = "|"
         )
       }
 
-      # Define a custom block prefix with stratum order
-      #(S1, S2, ...) if stratification is present
+      # Define custom prefixes for block and ID
       custom_block_prefix <- paste0("S", i, "_", block_prefix)
       custom_id_prefix <- paste0("S", i, "_", id_prefix)
+
       # Perform block randomization for this specific stratum
-      rand_df <- blockrand(
+      rand_df <- blockrand::blockrand(
         n = n,
         num.levels = length(balanced_levels),
         id.prefix = custom_id_prefix,
         block.prefix = custom_block_prefix,
         stratum = stratum_label,
-        block.sizes = block.sizes,
+        block.sizes = adjusted_block_sizes,
         levels = balanced_levels,
         uneq.beg = uneq_beg,
         uneq.mid = uneq_mid,
@@ -174,38 +197,37 @@ RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
         uneq.maxit = uneq_maxit
       )
 
-      # Rename the treatment column to "rando_bras"
-      colnames(rand_df)[colnames(rand_df) == "treatment"] <- "rando_bras"
+      # Rename the treatment column to "treatment_arm"
+      colnames(rand_df)[colnames(rand_df) == "treatment"] <- "treatment_arm"
 
-      # Add stratification variables to the dataframe
-      for (strat_var_name in strat_var_names) {
-        if (tolower(strat_var_name) %in% c("center", "centre")) {
-          new_var_name <- "redcap_data_access_group"
+      # Add stratification variables to the data frame
+      for (strat_var_name in names(strat_comb)) {
+        new_var_name <- if (tolower(strat_var_name) %in% c("center", "centre")) {
+          "redcap_data_access_group"
         } else {
-          new_var_name <- paste0("rando_", strat_var_name)
+          paste0("strat_", strat_var_name)
         }
-
         rand_df[[new_var_name]] <- strat_comb[[strat_var_name]]
       }
 
-      # Shuffle the blocks within the randomized dataframe
-      rand_df_shuffled <- melanger_blocs(rand_df)
+      # Shuffle the blocks within the randomized data frame
+      rand_df_shuffled <- shuffle_blocks(rand_df)
 
-      # Append the shuffled randomization dataframe for this stratum to the list
+      # Append the shuffled randomization data frame for this stratum to the list
       all_strata[[stratum_label]] <- rand_df_shuffled
     }
 
-    # Combine all strata into one final dataframe
-    final_df <- bind_rows(all_strata)
+    # Combine all strata into one final data frame
+    final_df <- dplyr::bind_rows(all_strata)
 
-    # Create the simplified dataset with only 'rando_bras' and stratification variables
-    stratification_columns <- grep("rando_|redcap_data_access_group",
-                                   colnames(final_df), value = TRUE)
+    # Create the simplified dataset with only 'treatment_arm' and stratification variables
+    stratification_columns <- grep("strat_|redcap_data_access_group", colnames(final_df), value = TRUE)
     simplified_df <- final_df[, stratification_columns, drop = FALSE]
+
   }
 
   # Convert all columns in simplified_df to factors
-  simplified_df <- simplified_df %>% mutate(across(everything(), as.factor))
+  simplified_df <- dplyr::mutate(simplified_df, dplyr::across(everything(), as.factor))
 
   rownames(final_df) <- NULL
   rownames(simplified_df) <- NULL
@@ -220,11 +242,10 @@ RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
       ratios = ratio,
       strat_vars = if (!is.null(strat_vars)) names(strat_vars) else NULL,
       strat_vars_prefix = strat_vars_prefix,
-      strat_levels = strat_vars,  # Includes levels of stratification variables
+      strat_levels = strat_vars,
       block_sizes_input = block_sizes,
-      stratum_seeds = if (exists("stratum_seeds")) stratum_seeds else NULL, # Seeds for strata, if any
-      type_of_list="development",
-      project_acronym=project_acronym
+      type_of_list = "development",
+      project_acronym = project_acronym
     ),
     tables = list(
       full_dataset = final_df,
@@ -235,7 +256,6 @@ RandCapGen <- function(n, id_prefix=NULL, block_prefix=NULL, block_sizes,
   # Return the structured object
   return(randomization_object)
 }
-
 
 ## RANDCAPPROD---------
 #' Generate Production Randomization
@@ -281,9 +301,14 @@ RandCapProd <- function(randomization_object, seed) {
   full_dataset_shuffled <- shuffle_blocks(full_dataset, seed = seed)
   rownames(full_dataset_shuffled) <- NULL
 
-  simplified_dataset_shuffled <- full_dataset_shuffled %>% select(
-    -c(id, stratum, block.id, block.size)
-  )
+  # Check if the 'stratum' column exists before trying to select
+  columns_to_remove <- c("id", "block.id", "block.size")
+  if ("stratum" %in% colnames(full_dataset_shuffled)) {
+    columns_to_remove <- c(columns_to_remove, "stratum")
+  }
+
+  simplified_dataset_shuffled <- full_dataset_shuffled %>%
+    dplyr::select(-all_of(columns_to_remove))
 
   randomization_object$tables$full_dataset <- full_dataset_shuffled
   randomization_object$tables$simplified_dataset <- simplified_dataset_shuffled
@@ -292,6 +317,7 @@ RandCapProd <- function(randomization_object, seed) {
 
   return(randomization_object)
 }
+
 
 
 #RANDCAP BALANCE--------
@@ -325,16 +351,21 @@ RandCapBalance <- function(randomization_object,
   full_dataset <- randomization_object$tables$full_dataset
   num_strata <- length(unique(full_dataset$stratum))
 
+
+
   # Handle the case where no strata are defined
   if (num_strata == 0) {
-    full_dataset <- full_dataset %>% mutate(stratum = "No stratum")
+    full_dataset <- full_dataset %>% dplyr::mutate(stratum = "No stratum")
+    colnames(full_dataset)[4] <- "treatment_arm"
+  }else{
+    colnames(full_dataset)[5] <- "treatment_arm"
   }
 
   # Create the balance table with dplyr and tidyr
   balance_df <- full_dataset %>%
-    count(stratum, rando_bras) %>%
-    pivot_wider(names_from = rando_bras, values_from = n, values_fill = 0) %>%
-    mutate(Total = rowSums(select(., -stratum)))
+    dplyr::count(stratum, treatment_arm) %>%
+    tidyr::pivot_wider(names_from = treatment_arm, values_from = n, values_fill = 0) %>%
+    dplyr::mutate(Total = rowSums(dplyr::select(., -stratum)))
 
   # Get randomization settings
   strat_vars <- randomization_object$settings$strat_vars
@@ -356,7 +387,7 @@ RandCapBalance <- function(randomization_object,
   pdf(output_path, width = 8.5, height = 11)
 
   # Determine the layout for the first page based on the number of rows in the table
-  grid.newpage()
+  grid::grid.newpage()
 
   if (nrow(balance_df) >= 20) {
     # Case with at least 20 rows in the table
@@ -372,45 +403,52 @@ RandCapBalance <- function(randomization_object,
   }
 
   # Display text in the upper section (30% of the page)
-  pushViewport(viewport(layout = grid.layout(10, 1)))  # Divide into 10 for proportional layout
-  pushViewport(viewport(layout.pos.row = 1:3, layout.pos.col = 1))  # Upper section for text
+  grid::pushViewport(grid::viewport(layout = grid.layout(10, 1)))  # Divide into 10 for proportional layout
+  grid::pushViewport(grid::viewport(layout.pos.row = 1:3, layout.pos.col = 1))  # Upper section for text
 
   # Display headers and values with blue and bold style for headers and black for values
-  grid.text("Randomization Balance Summary", x = 0.25, y = 0.8, just = "left",
-            gp = gpar(fontsize = 18, fontface = "bold", col = "#2E86C1"))
+  if(randomization_object$settings$type_of_list=="development"){
+    grid::grid.text("Randomization Balance Summary for development list",
+              x = 0.15, y = 0.8, just = "left",
+              gp = gpar(fontsize = 18, fontface = "bold", col = "#2E86C1"))
+  }else{
+    grid::grid.text("Randomization Balance Summary for production list", x = 0.15,
+              y = 0.8, just = "left",
+              gp = gpar(fontsize = 18, fontface = "bold", col = "#2E86C1"))
+  }
 
   # Display number of strata
   if (num_strata == 0) {
-    grid.text("Number of Strata:", x = 0.15, y = 0.55, just = "left",
+    grid::grid.text("Number of Strata:", x = 0.15, y = 0.55, just = "left",
               gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
-    grid.text("The randomization is not stratified", x = 0.4, y = 0.55, just = "left",
+    grid::grid.text("The randomization is not stratified", x = 0.4, y = 0.55, just = "left",
               gp = gpar(fontsize = 12, col = "#34495E"))
   } else {
-    grid.text("Number of Strata:", x = 0.15, y = 0.55, just = "left",
+    grid::grid.text("Number of Strata:", x = 0.15, y = 0.55, just = "left",
               gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
-    grid.text(num_strata, x = 0.4, y = 0.55, just = "left",
+    grid::grid.text(num_strata, x = 0.4, y = 0.55, just = "left",
               gp = gpar(fontsize = 12, col = "#34495E"))
   }
 
-  grid.text("Stratification variables:", x = 0.15, y = 0.4, just = "left",
+  grid::grid.text("Stratification variables:", x = 0.15, y = 0.4, just = "left",
             gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
-  grid.text(strat_vars_text, x = 0.4, y = 0.4, just = "left",
+  grid::grid.text(strat_vars_text, x = 0.4, y = 0.4, just = "left",
             gp = gpar(fontsize = 12, col = "#34495E"))
 
-  grid.text("Treatment Arms:", x = 0.15, y = 0.25, just = "left",
+  grid::grid.text("Treatment Arms:", x = 0.15, y = 0.25, just = "left",
             gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
-  grid.text(treatment_arms, x = 0.4, y = 0.25, just = "left",
+  grid::grid.text(treatment_arms, x = 0.4, y = 0.25, just = "left",
             gp = gpar(fontsize = 12, col = "#34495E"))
 
-  grid.text("Ratios:", x = 0.15, y = 0.1, just = "left",
+  grid::grid.text("Ratios:", x = 0.15, y = 0.1, just = "left",
             gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
-  grid.text(ratios, x = 0.4, y = 0.1, just = "left",
+  grid::grid.text(ratios, x = 0.4, y = 0.1, just = "left",
             gp = gpar(fontsize = 12, col = "#34495E"))
 
-  popViewport()
+  grid::popViewport()
 
   # Display the table in the lower section
-  table_grob1 <- tableGrob(balance_df[1:table_rows, ], rows = NULL)
+  table_grob1 <- gridExtra::tableGrob(balance_df[1:table_rows, ], rows = NULL)
   table_theme_page1 <- ttheme_minimal(
     core = list(
       fg_params = list(col = "black"),
@@ -429,18 +467,18 @@ RandCapBalance <- function(randomization_object,
     )
   )
 
-  pushViewport(viewport(y = 1 - text_layout_height,
+  grid::pushViewport(grid::viewport(y = 1 - text_layout_height,
                         height = unit(table_layout_height, "npc"),
                         just = "top"))
-  grid.draw(tableGrob(balance_df[1:table_rows, ], rows = NULL,
+  grid::grid.draw(gridExtra::tableGrob(balance_df[1:table_rows, ], rows = NULL,
                       theme = table_theme_page1))
-  popViewport()
+  grid::popViewport()
 
   # Add an empty layout below if there are fewer than 20 rows in the table
   if (nrow(balance_df) < 20) {
-    pushViewport(viewport(y = text_layout_height, height =
+    grid::pushViewport(grid::viewport(y = text_layout_height, height =
                             unit(remaining_height, "npc"), just = "top"))
-    popViewport()
+    grid::popViewport()
   }
 
   # Pages for remaining rows
@@ -449,7 +487,7 @@ RandCapBalance <- function(randomization_object,
   rows_per_page <- 31
 
   while (start_row <= num_rows) {
-    grid.newpage()
+    grid::grid.newpage()
 
     # Check if this is the last page
     is_last_page <- (start_row + rows_per_page - 1 >= num_rows)
@@ -474,7 +512,7 @@ RandCapBalance <- function(randomization_object,
         bg_params = list(fill = "#2E86C1")
       )
     )
-    table_grob <- tableGrob(table_page, rows = NULL, theme = table_theme)
+    table_grob <- gridExtra::tableGrob(table_page, rows = NULL, theme = table_theme)
 
     if (is_last_page) {
       # Last page: Adjust the height based on remaining rows with a factor of 3%
@@ -482,14 +520,14 @@ RandCapBalance <- function(randomization_object,
       last_page_height <- min(0.9, 0.025 * remaining_rows)
 
       # Position table in the upper section of the last page
-      pushViewport(viewport(y = 0.9, height = unit(last_page_height, "npc"), just = "top"))
+      grid::pushViewport(grid::viewport(y = 0.9, height = unit(last_page_height, "npc"), just = "top"))
     } else {
       # Intermediate pages with table at the top
-      pushViewport(viewport(y = 0.87, height = unit(0.75, "npc"), just = "top"))
+      grid::pushViewport(grid::viewport(y = 0.87, height = unit(0.75, "npc"), just = "top"))
     }
 
-    grid.draw(table_grob)
-    popViewport()
+    grid::grid.draw(table_grob)
+    grid::popViewport()
 
     # Move to the next set of rows
     start_row <- end_row + 1
@@ -532,9 +570,14 @@ RandCapSettings <- function(rand_obj, output_path = "Randomization_settings.pdf"
   pdf(output_path, width = 8.5, height = 11, family = "serif")
 
   # Title
-  grid.newpage()
-  grid.text("Randomization Settings", x = 0.1, y = 0.9, just = "left",
+  grid::grid.newpage()
+  if(rand_obj$settings$type_of_list=="development"){
+    grid::grid.text("Randomization settings for development list", x = 0.1, y = 0.9, just = "left",
             gp = gpar(fontsize = 20, fontface = "bold", col = "#2E86C1"))
+  }else{
+    grid::grid.text("Randomization settings for production lis", x = 0.1, y = 0.9, just = "left",
+              gp = gpar(fontsize = 20, fontface = "bold", col = "#2E86C1"))
+    }
 
   # Variables
   r_version <- rand_obj$settings$R_version
@@ -552,10 +595,10 @@ RandCapSettings <- function(rand_obj, output_path = "Randomization_settings.pdf"
   # Display function with alignment adjustments
   display_setting <- function(label, value, y_pos) {
     # Bold blue label
-    grid.text(label, x = 0.1, y = y_pos, just = "left",
+    grid::grid.text(label, x = 0.1, y = y_pos, just = "left",
               gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
     # Black value with adjusted spacing
-    grid.text(value, x = 0.45, y = y_pos, just = "left",
+    grid::grid.text(value, x = 0.45, y = y_pos, just = "left",
               gp = gpar(fontsize = 12, col = "#34495E"))
   }
 
@@ -572,14 +615,14 @@ RandCapSettings <- function(rand_obj, output_path = "Randomization_settings.pdf"
   # Stratification variables and levels with line wrapping for Centers
   if (is.null(strat_vars) || length(strat_vars) == 0) {
     # No stratification variable
-    grid.text("Stratification:", x = 0.1, y = y_pos, just = "left",
+    grid::grid.text("Stratification:", x = 0.1, y = y_pos, just = "left",
               gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
-    grid.text("There is no stratification variable.", x = 0.45,
+    grid::grid.text("There is no stratification variable.", x = 0.45,
               y = y_pos, just = "left",
               gp = gpar(fontsize = 12, col = "#34495E"))
   } else {
     # Display stratification variables
-    grid.text("Stratification Variables:", x = 0.1, y = y_pos, just = "left",
+    grid::grid.text("Stratification Variables:", x = 0.1, y = y_pos, just = "left",
               gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
     y_pos <- y_pos - 0.03
 
@@ -592,19 +635,19 @@ RandCapSettings <- function(rand_obj, output_path = "Randomization_settings.pdf"
         wrapped_levels <- strwrap(levels_text, width = 80)
 
         # Print "Centers:" as the label and wrap the levels across lines
-        grid.text("- Centers:", x = 0.15, y = y_pos, just = "left",
+        grid::grid.text("- Centers:", x = 0.15, y = y_pos, just = "left",
                   gp = gpar(fontsize = 12))
         y_pos <- y_pos - 0.03
 
         for (line in wrapped_levels) {
-          grid.text(line, x = 0.2, y = y_pos, just = "left",
+          grid::grid.text(line, x = 0.2, y = y_pos, just = "left",
                     gp = gpar(fontsize = 12, col = "#34495E"))
           y_pos <- y_pos - 0.03
         }
 
       } else {
         # For other stratification variables, display without line wrapping
-        grid.text(paste0("− ", strat_vars[i], ": ", paste(strat_levels[[i]],
+        grid::grid.text(paste0("− ", strat_vars[i], ": ", paste(strat_levels[[i]],
                                                           collapse = ", ")),
                   x = 0.15, y = y_pos, just = "left",
                   gp = gpar(fontsize = 12, col = "#34495E"))
@@ -615,14 +658,14 @@ RandCapSettings <- function(rand_obj, output_path = "Randomization_settings.pdf"
 
   # Conditional display of block sizes
   y_pos <- y_pos - 0.03
-  grid.text("Block Size per Stratum:", x = 0.1, y = y_pos, just = "left",
+  grid::grid.text("Block Size per Stratum:", x = 0.1, y = y_pos, just = "left",
             gp = gpar(fontsize = 12, fontface = "bold", col = "#2874A6"))
 
   if (display_block_sizes) {
-    grid.text(block_sizes, x = 0.45, y = y_pos, just = "left",
+    grid::grid.text(block_sizes, x = 0.45, y = y_pos, just = "left",
               gp = gpar(fontsize = 12, col = "#34495E"))
   } else {
-    grid.text("Not allowed to be displayed", x = 0.45, y = y_pos, just = "left",
+    grid::grid.text("Not allowed to be displayed", x = 0.45, y = y_pos, just = "left",
               gp = gpar(fontsize = 12, col = "#E74C3C"))
   }
 
