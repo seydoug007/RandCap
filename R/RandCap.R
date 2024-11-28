@@ -46,6 +46,7 @@
 #'   seed = 1234,
 #'   project_acronym = "RCT"
 #' )
+#' @importFrom dplyr count %>%
 
 
 RandCapGen <- function(n, id_prefix = NULL, block_prefix = NULL, block_sizes,
@@ -339,6 +340,10 @@ RandCapProd <- function(randomization_object, seed) {
 #' \code{\link{RandCapSettings}},
 #' \code{\link{RandCapTable}},
 #' and \code{\link{RandCapProd}}
+
+#' @importFrom tidyr pivot_wider
+#' @importFrom gridExtra tableGrob ttheme_minimal
+#' @importFrom grid grid.newpage grid.layout grid.text viewport pushViewport popViewport gpar
 
 RandCapBalance <- function(randomization_object,
                            output_path = "Randomization_Balance.pdf") {
