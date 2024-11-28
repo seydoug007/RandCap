@@ -343,7 +343,7 @@ RandCapProd <- function(randomization_object, seed) {
 
 #' @importFrom tidyr pivot_wider
 #' @importFrom gridExtra tableGrob ttheme_minimal
-#' @importFrom grid grid.newpage grid.layout grid.text viewport pushViewport popViewport gpar
+#' @importFrom grid grid.newpage grid.layout grid.text viewport pushViewport popViewport gpar unit
 
 RandCapBalance <- function(randomization_object,
                            output_path = "Randomization_Balance.pdf") {
