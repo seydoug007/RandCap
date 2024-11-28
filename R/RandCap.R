@@ -580,7 +580,7 @@ RandCapSettings <- function(rand_obj, output_path = "Randomization_settings.pdf"
     grid::grid.text("Randomization settings for development list", x = 0.1, y = 0.9, just = "left",
             gp = gpar(fontsize = 20, fontface = "bold", col = "#2E86C1"))
   }else{
-    grid::grid.text("Randomization settings for production lis", x = 0.1, y = 0.9, just = "left",
+    grid::grid.text("Randomization settings for production list", x = 0.1, y = 0.9, just = "left",
               gp = gpar(fontsize = 20, fontface = "bold", col = "#2E86C1"))
     }
 
