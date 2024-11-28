@@ -25,12 +25,8 @@ This vignette demonstrates the key features of `RandCap` with practical examples
 
 To install `RandCap`:
 
-# Install from CRAN (if available)
-install.packages("RandCap")
-
-
-# Or install the development version from GitHub
-devtools::install_github("your_github_username/RandCap")
+# install the development version from GitHub
+devtools::install_github("seydoug007/RandCap")
 
 # Load the library
 ```{r}

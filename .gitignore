@@ -11,3 +11,4 @@
 # Ignore all CSV files
 *.csv
 inst/doc
+test.R
