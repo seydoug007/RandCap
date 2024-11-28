@@ -738,10 +738,10 @@ RandCapTable <- function(randomization_object, save_for_REDCap = FALSE,
   }
 
   # Return both tables in a list
-  return(list(
-    simplified_table = randomization_object$tables$simplified_dataset,
-    full_table = randomization_object$tables$full_dataset
-  ))
+  # return(list(
+  #   simplified_table = randomization_object$tables$simplified_dataset,
+  #   full_table = randomization_object$tables$full_dataset
+  # ))
 }
 
 

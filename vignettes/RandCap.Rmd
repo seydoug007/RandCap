@@ -21,17 +21,16 @@ knitr::opts_chunk$set(
 
 This vignette demonstrates the key features of `RandCap` with practical examples.
 
+
 # Installation
 
 To install the development version of `RandCap`:
-
 devtools::install_github("seydoug007/RandCap")
 
 # Load the library
 ```{r}
 library(RandCap)
 ```
-
 
 
 
@@ -45,6 +44,8 @@ The parameters used in this example are:
 - *block_sizes*: A vector of block sizes to use for randomization (blocks of size 2 and 4).
 - *arms*: The treatment arms, labeled as "A" and "B".
 - *seed*: A seed for reproducibility of the randomization process.
+
+
 
 ```{r}
 rand_dev_list <- RandCapGen(
@@ -81,10 +82,9 @@ rand_list_strat <- RandCapGen(
 The full dataset provides a comprehensive view of the randomization table, including patient identifiers, block assignments, and stratum identifiers (if stratification is applied). This detailed output allows you to verify the integrity of the randomization process, ensuring that blocks and strata have been assigned correctly and that the allocation adheres to the predefined parameters."
 
 ```{r}
-head(rand_dev_list$tables$full_dataset)
+head(rand_list_strat$tables$full_dataset)
 
 ```
-
 
 
 # View the simplified dataset
@@ -114,15 +114,22 @@ prod_list <- RandCapProd(randomization_object = rand_list_strat, seed = 9876)
 
 # Customizing Column Names
 
-```{r}
-colnames(rand_dev_list$tables$simplified_dataset) <- c("NewName1", "NewName2", "NewName3")
+If you need to rename the columns in the randomization tables to adhere to a specific naming convention or format, you can directly modify the relevant table within the randomization object. For example, to rename the columns in the simplified dataset, you can assign new names to its column names as shown below:
 
+```{r}
+colnames(rand_list_strat$tables$simplified_dataset) <- c("rando_bras", "Rando_Sex", "Rando_AgeGroup")
+
+head(rand_list_strat$tables$simplified_dataset)
 ```
 
 
 
 
+
+
 # Assess Randomization Balance
+
+The RandCapBalance function is a core feature of the RandCap package. Its purpose is to ensure the randomization process has distributed participants evenly across treatment arms and, when applicable, within stratification groups. As part of its functionality, the function not only calculates balance metrics but also generates a detailed PDF report summarizing the results.
 
 ```{r}
 RandCapBalance(
@@ -131,55 +138,58 @@ RandCapBalance(
 )
 ```
 
-![Figure 1: Randomization balance visualization](img/randCapBalance.PNG){width=50%}
+![Figure 1: Randomization balance visualization](img/randCapBalance.PNG){width=100%}
 
 
 
 # Export Randomization Settings
+
+The RandCapSettings function in the RandCap package provides a comprehensive overview of the randomization parameters used in a study. This function generates a detailed PDF document summarizing these settings, making it an essential tool for documenting the design and ensuring transparency and reproducibility.
+Pass the randomization_object to RandCapSettings to generate the report. By default, the PDF is saved in your working directory
+
 ```{r}
 
-RandCapSettings(rand_obj = rand_list, output_path = "Settings_Summary.pdf")
+RandCapSettings(rand_obj = rand_list_strat)
 ```
 
-![Figure 1: Randomization settings visualization](img/RandcapSettings.PNG.PNG){width=50%}
+![Figure 2: Randomization settings visualization](img/RandcapSettings.PNG){width=100%}
 
 
 # Export Tables for REDCap
+
+
 ```{r}
 RandCapTable(
-  randomization_object = rand_list,
+  randomization_object = rand_list_strat,
   save_for_REDCap = TRUE,
   save_random_table = TRUE
 )
 ```
 
+
 # Custom Ratios
 
+The RandCap package provides flexibility to assign participants to treatment arms with custom allocation ratios. When required, these ratios can be easily specified to reflect the desired distribution across treatment groups.
+
+
 ```{r}
-rand_custom <- RandCapGen(
-  n = 90,
-  block_sizes = c(18, 18),
-  arms = c("Treatment", "Control"),
-  ratio = c(2, 1),
-  seed = 3456,
-  project_acronym = "RCT"
+rand_custom_ratio <- RandCapGen(
+  n = 300,
+  block_sizes = c(5, 10),
+  arms = c("A", "B","C"),
+  ratio = c(1,2,2),
+  seed = 3456
 )
 ```
 
 
-# View the dataset
+# Testing the balance of different ratio assignment
+
 ```{r}
-head(rand_custom$tables$full_dataset)
+RandCapBalance(rand_custom_ratio)
 ```
 
-# Visualization
-```{r}
-library(ggplot2)
+![Figure 3: Randomization balance visualization](img/randCapBalance2.PNG.PNG){width=100%}
 
-ggplot(rand_list$tables$full_dataset, aes(x = treatment_arm)) +
-  geom_bar(fill = "skyblue") +
-  labs(title = "Treatment Arm Distribution", x = "Treatment Arm", y = "Count") +
-  theme_minimal()
-```
 
 
