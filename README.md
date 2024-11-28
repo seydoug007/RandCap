@@ -7,12 +7,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
 
 
 # Introduction
@@ -25,6 +19,7 @@ This vignette demonstrates the key features of `RandCap` with practical examples
 # Installation
 
 To install the development version of `RandCap`:
+
 devtools::install_github("seydoug007/RandCap")
 
 # Load the library
