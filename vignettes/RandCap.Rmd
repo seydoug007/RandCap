@@ -25,7 +25,11 @@ This vignette demonstrates the key features of `RandCap` with practical examples
 # Installation
 
 To install the development version of `RandCap`:
+```{r}
 devtools::install_github("seydoug007/RandCap")
+```
+
+
 
 # Load the library
 ```{r}
