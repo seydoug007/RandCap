@@ -26,3 +26,5 @@ Imports:
     gridExtra,
     tidyr
 VignetteBuilder: knitr
+URL: https://github.com/seydoug007/RandCap
+BugReports: https://github.com/seydoug007/RandCap/issues
