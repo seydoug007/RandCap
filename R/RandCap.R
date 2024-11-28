@@ -223,7 +223,7 @@ RandCapGen <- function(n, id_prefix = NULL, block_prefix = NULL, block_sizes,
 
     # Create the simplified dataset with only 'treatment_arm' and stratification variables
     stratification_columns <- grep("strat_|redcap_data_access_group", colnames(final_df), value = TRUE)
-    simplified_df <- final_df[, stratification_columns, drop = FALSE]
+    simplified_df <- final_df[, c("treatment_arm", stratification_columns), drop = FALSE]
 
   }
 
