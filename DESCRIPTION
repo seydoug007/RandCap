@@ -5,7 +5,7 @@ Authors@R:
     c(
       person("Seydou", "GORO", , "seydoug007@gmail.com", role = c("aut", "cre"),
              comment = c(ORCID = "0000-0002-3301-3604")),
-      person("Christina", "Sadder", , "christina.sadder@example.com", role = "ctb",
+      person("Christina", "Sadder", , "christina_sader00@hotmail.com", role = "ctb",
              comment = c(ORCID = "ANOTHER-ORCID-ID")),
       person("Biometry unit, Centre hospitalier de Créteil", "Contributor", , "another.contributor@example.com", role = "ctb")
     )
