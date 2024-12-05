@@ -64,15 +64,14 @@ This function is ideal for designing randomized allocation schemes in clinical t
 \examples{
 # Basic example with 100 participants, two treatment arms, and a 1:1 allocation ratio
 RandCapGen(
-  n = 100,
+  n = 300,
   id_prefix = "ID_",
   block_prefix = "Block_",
-  block_sizes = c(10, 10),
-  arms = c("Control", "Treatment"),
-  ratio = c(1, 1),
-  strat_vars = c("Sex", "AgeGroup"),
-  seed = 1234,
-  project_acronym = "RCT"
+  block_sizes = c(2,4,6),
+  arms = c("A", "B"),
+  ratio = c(1, 2),
+  strat_vars = c(sex=c(1,2)),
+  seed = 1501
 )
 }
 \seealso{
