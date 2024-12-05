@@ -745,3 +745,54 @@ RandCapTable <- function(randomization_object, save_for_REDCap = FALSE,
 }
 
 
+
+
+#
+# Hello World
+# Follow this Hello World exercise to learn GitHub's pull request workflow.
+#
+# In this article
+# Introduction
+# Step 1: Create a repository
+# Step 2: Create a branch
+# Step 3: Make and commit changes
+# Step 4: Open a pull request
+# Step 5: Merge your pull request
+# Conclusion
+# Next steps
+# Further reading
+# Introduction
+# This tutorial teaches you GitHub essentials like repositories, branches, commits, and pull requests. You'll create your own Hello World repository and learn GitHub's pull request workflow, a popular way to create and review code.
+#
+# In this quickstart guide, you will:
+#
+# Create and use a repository.
+# Start and manage a new branch.
+# Make changes to a file and push them to GitHub as commits.
+# Open and merge a pull request.
+# Prerequisites
+# You must have a GitHub account. For more information, see "Creating an account on GitHub."
+#
+# You don't need to know how to code, use the command line, or install Git (the version control software that GitHub is built on).
+#
+# Step 1: Create a repository
+# The first thing we'll do is create a repository. You can think of a repository as a folder that contains related items, such as files, images, videos, or even other folders. A repository usually groups together items that belong to the same "project" or thing you're working on.
+#
+# Often, repositories include a README file, a file with information about your project. README files are written in Markdown, which is an easy-to-read, easy-to-write language for formatting plain text. We'll learn more about Markdown in the next tutorial, "Setting up your profile."
+#
+# GitHub lets you add a README file at the same time you create your new repository. GitHub also offers other common options such as a license file, but you do not have to select any of them now.
+#
+# Your hello-world repository can be a place where you store ideas, resources, or even share and discuss things with others.
+#
+# In the upper-right corner of any page, select , then click New repository.
+#
+# Screenshot of a GitHub dropdown menu showing options to create new items. The menu item "New repository" is outlined in dark orange.
+# In the "Repository name" box, type hello-world.
+#
+# In the "Description" box, type a short description. For example, type "This repository is for practicing the GitHub Flow."
+#
+# Select whether your repository will be Public or Private.
+#
+# Select Add a README file.
+#
+# Click Create repository.
