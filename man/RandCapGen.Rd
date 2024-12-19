@@ -67,12 +67,11 @@ RandCapGen(
   n = 100,
   id_prefix = "ID_",
   block_prefix = "Block_",
-  block_sizes = c(10, 10),
-  arms = c("Control", "Treatment"),
+  arms = c("A", "B"),
+  block_sizes = c(2, 4),
   ratio = c(1, 1),
-  strat_vars = c("Sex", "AgeGroup"),
+  strat_vars = list(sex=c("Male","Female"),age=c("Young","Old")),
   seed = 1234,
-  project_acronym = "RCT"
 )
 }
 \seealso{

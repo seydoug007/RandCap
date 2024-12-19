@@ -39,12 +39,11 @@
 #'   n = 100,
 #'   id_prefix = "ID_",
 #'   block_prefix = "Block_",
-#'   block_sizes = c(10, 10),
-#'   arms = c("Control", "Treatment"),
+#'   arms = c("A", "B"),
+#'   block_sizes = c(2, 4),
 #'   ratio = c(1, 1),
-#'   strat_vars = c("Sex", "AgeGroup"),
+#'   strat_vars = list(sex=c("Male","Female"),age=c("Young","Old")),
 #'   seed = 1234,
-#'   project_acronym = "RCT"
 #' )
 #' @importFrom dplyr count %>%
 
@@ -335,7 +334,7 @@ RandCapProd <- function(randomization_object, seed) {
 #'
 #' @examples
 #' # Assuming you have a randomization object from RandCapGen
-#' RandCapBalance(randomization_object = my_randomization_object, output_path = "Balance_Summary.pdf")
+#' RandCapBalance(randomization_object = my_randomization_object)
 #' @seealso \code{\link{RandCapGen}},
 #' \code{\link{RandCapSettings}},
 #' \code{\link{RandCapTable}},
@@ -560,7 +559,7 @@ RandCapBalance <- function(randomization_object,
 #'
 #' @examples
 #' # Example usage
-#' RandCapSettings(randomization_object = my_randomization_object, output_path = "Randomization_Settings.pdf")
+#' RandCapSettings(randomization_object = my_randomization_object)
 #' @seealso \code{\link{RandCapGen}}, \code{\link{RandCapBalance}}, \code{\link{RandCapTable}}
 
 
@@ -736,12 +735,6 @@ RandCapTable <- function(randomization_object, save_for_REDCap = FALSE,
     write.csv(randomization_object$tables$full_dataset,
               randomization_table_name, row.names = FALSE)
   }
-
-  # Return both tables in a list
-  # return(list(
-  #   simplified_table = randomization_object$tables$simplified_dataset,
-  #   full_table = randomization_object$tables$full_dataset
-  # ))
 }
 
 

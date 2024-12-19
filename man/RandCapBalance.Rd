@@ -19,7 +19,7 @@ A data frame showing the balance across stratified groups for each treatment arm
 }
 \examples{
 # Assuming you have a randomization object from RandCapGen
-RandCapBalance(randomization_object = my_randomization_object, output_path = "Balance_Summary.pdf")
+RandCapBalance(randomization_object = my_randomization_object)
 }
 \seealso{
 \code{\link{RandCapGen}},
