@@ -63,13 +63,13 @@ This function is ideal for designing randomized allocation schemes in clinical t
 }
 \examples{
 # Basic example with 100 participants, two treatment arms, and a 1:1 allocation ratio
-RandCapGen(
+randomization_object<-RandCapGen(
   n = 100,
   id_prefix = "ID_",
   block_prefix = "Block_",
   arms = c("A", "B"),
   block_sizes = c(2, 4),
-  ratio = c(1, 1),
+  ratio = c(1, 1),# optionnal when equal allocation
   strat_vars = list(sex=c("Male","Female"),age=c("Young","Old")),
   seed = 1234,
 )
